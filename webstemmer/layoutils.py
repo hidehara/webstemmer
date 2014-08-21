@@ -128,7 +128,7 @@ class Chunker:
     r = []
     self.chunk(e, [], False)
     for (path, texts) in self.blocks:
-      b = TextBlock('/'.join(path[-self.PATH_COMPS:]), 
+      b = TextBlock('/'.join(str(path[-self.PATH_COMPS:])), 
                     concat( t for (t, a) in texts ),
                     concat( t for (t, a) in texts if not a ))
       if self.MIN_CHARS <= len(b.sig_text):

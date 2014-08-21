@@ -254,10 +254,10 @@ class HTMLParser3(SGMLParser3):
 
   def feed_byte(self, byte, pos=0):
     try:
-      from io import StringIO
+      from io import BytesIO
     except ImportError:
-      from io import StringIO
-    return self.feed_file(StringIO(byte), pos)
+      from io import BytesIO
+    return self.feed_file(BytesIO(byte), pos)
 
 
 # test

@@ -399,7 +399,7 @@ def parse(x, base_href=None, charset=None, stylesheet=None):
   if isinstance(x, str):
     parser.feed_unicode(x)
     e = parser.close()
-  elif isinstance(x, str):
+  elif isinstance(x, bytes):
     parser.feed_byte(x)
     e = parser.close()
   else:
