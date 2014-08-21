@@ -44,7 +44,7 @@ def sigchars(s):
 KEY_ATTRS = dict.fromkeys('id class align valign rowspan colspan'.split(' '))
 def encode_element(e):
   return e.tag + ''.join(sorted( ':%s=%s' % (k.lower(), e.attrs[k].lower())
-                                 for k in e.attrs.keys() if k in KEY_ATTRS ))
+                                 for k in list(e.attrs.keys()) if k in KEY_ATTRS ))
 
 class TextBlock:
   
@@ -199,10 +199,10 @@ def retrieve_blocks(pathseq, blocks):
 
 # testing
 def main(args):
-  from htmldom import parsefile
+  from .htmldom import parsefile
   tree = parsefile(sys.stdin)
   for b in get_textblocks(tree):
-    print repr(b.path), b.orig_text[:50].encode('euc-jp', 'replace')
+    print(repr(b.path), b.orig_text[:50].encode('euc-jp', 'replace'))
   return
 
 if __name__ == '__main__': main(sys.argv[1:])

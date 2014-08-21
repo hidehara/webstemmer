@@ -53,7 +53,7 @@ from webstemmer.htmlparser3 import HTMLParser3, HTMLHandler
 ##
 class HTMLTextHandler(HTMLHandler):
 
-  CUTSP = re.compile(ur'([\u3000-\u9fff])\n+([\u3000-\u9fff])')
+  CUTSP = re.compile(r'([\u3000-\u9fff])\n+([\u3000-\u9fff])')
   IGNORED_TAGS = dict.fromkeys(
     'comment script style select'.split(' ')
     )
@@ -102,7 +102,7 @@ class HTMLTextHandler(HTMLHandler):
 
 # main
 if __name__ == "__main__":
-  import getopt, urllib
+  import getopt, urllib.request, urllib.parse, urllib.error
   class out:
     def __init__(self, charset):
       self.encoder = getencoder(charset)
@@ -113,7 +113,7 @@ if __name__ == "__main__":
       sys.stdout.flush()
       return
   def usage():
-    print 'usage: html2txt.py [-c charset_in] [-C charset_out] files ...'
+    print('usage: html2txt.py [-c charset_in] [-C charset_out] files ...')
     sys.exit(2)
   try:
     (opts, args) = getopt.getopt(sys.argv[1:], 'c:C:')
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     if url == '-':
       fp = sys.stdin
     elif url.startswith('http:') or url.startswith('ftp:'):
-      fp = urllib.urlopen(url)
+      fp = urllib.request.urlopen(url)
     else:
       fp = file(url)
     p = HTMLParser3(HTMLTextHandler(out(charset_out)), charset=charset_in)

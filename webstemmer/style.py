@@ -8,10 +8,10 @@ def is_cssnumber(x):
   return isinstance(x, tuple) and len(x) == 2 and (isinstance(x[0], int) or isinstance(x[0], float))
 
 def is_cssstring(x):
-  return isinstance(x, basestring) and (x[0] in '(\'"')
+  return isinstance(x, str) and (x[0] in '(\'"')
 
 def is_csssymbol(x):
-  return isinstance(x, basestring) and (x[0] not in '@#(\'"')
+  return isinstance(x, str) and (x[0] not in '@#(\'"')
 
 def filter_numbers(args):
   return [ x for x in args if is_cssnumber(x) ]
@@ -114,14 +114,14 @@ class Style(object):
     values = self.values.copy()
     self = self.parent
     while self:
-      for (k,v) in self.values.iteritems():
+      for (k,v) in self.values.items():
         if k not in values:
           values[k] = v
       self = self.parent
-    return values.iteritems()
+    return iter(values.items())
 
   def __repr__(self):
-    return '<Style: %s>' % (', '.join( '%s=%r' % (k,v) for (k,v) in self.iteritems()
+    return '<Style: %s>' % (', '.join( '%s=%r' % (k,v) for (k,v) in self.items()
                                        if not k.startswith('_') ))
 
   def __getitem__(self, k):
@@ -136,11 +136,11 @@ class Style(object):
 
   def override(self, parent_component, style, default_style):
     dest = Style(default_style)
-    for (k,v) in self.iteritems():
+    for (k,v) in self.items():
       if k in INHERITABLE:
         dest.values[k] = v
     if style:
-      for (k,v) in style.iteritems():
+      for (k,v) in style.items():
         if isinstance(v, tuple):
           (v,unit) = v
           if unit == '%':
@@ -156,7 +156,7 @@ class Style(object):
     return dest
 
   def add_decl(self, decl, _=None):
-    for (k,v) in decl.iteritems():
+    for (k,v) in decl.items():
       a = 'set_'+k
       if hasattr(self, a):
         getattr(self, a)(v)
@@ -337,7 +337,7 @@ class StyleSheet:
   
   def parse(self, s, charset=None):
     if charset:
-      s = unicode(s, charset, 'replace')
+      s = str(s, charset, 'replace')
     CSSParser(self).feed(CSSTokenizer().feed(s))
     return
   
@@ -346,7 +346,7 @@ class StyleSheet:
     parser = CSSParser(self)
     for s in lines:
       if charset:
-        s = unicode(s, charset, 'replace')
+        s = str(s, charset, 'replace')
       parser.feed(tokenizer.feed(s))
     return
   
@@ -354,9 +354,9 @@ class StyleSheet:
     return
 
   def dump(self):
-    for (context,tag) in sorted(self.style.iterkeys()):
+    for (context,tag) in sorted(self.style.keys()):
       decl = self.style[(context,tag)]
-      print '%s/%s' % (context, tag)
+      print('%s/%s' % (context, tag))
       def f(x):
         if is_cssnumber(x):
           (x,u) = x
@@ -366,9 +366,9 @@ class StyleSheet:
             return '%d%s' % (x,u)
         else:
           return x
-      for (k,v) in decl.iteritems():
-        print '\t%s: %s' % (k, ' '.join( f(x) for x in v ))
-      print
+      for (k,v) in decl.items():
+        print('\t%s: %s' % (k, ' '.join( f(x) for x in v )))
+      print()
     return
 
   def switch_media(self, media_spec):
@@ -440,16 +440,16 @@ class StyleSheet:
 ##  CSSTokenizer
 ##
 END_STRING = {
-  u'"': re.compile(ur'["\\]'),
-  u"'": re.compile(ur"['\\]"),
-  u'(': re.compile(ur'[)\\]')
+  '"': re.compile(r'["\\]'),
+  "'": re.compile(r"['\\]"),
+  '(': re.compile(r'[)\\]')
   }
-NEXT_TOKENS = re.compile(ur'/\*|<!--|-->|~=|\|=|\n|\S')
-END_COMMENT = re.compile(ur'\*/')
-START_IDENT_NUMBER = re.compile(ur'[-\*#@\.0-9\w]', re.UNICODE)
-END_IDENT_NUMBER = re.compile(ur'[^-.%\w]', re.UNICODE)
-NUMBER = re.compile(ur'^(-?[0-9]*\.?[0-9]+)([a-z%]*)$')
-UNICODE_HEX = re.compile(ur'[a-fA-F0-9]+\s?')
+NEXT_TOKENS = re.compile(r'/\*|<!--|-->|~=|\|=|\n|\S')
+END_COMMENT = re.compile(r'\*/')
+START_IDENT_NUMBER = re.compile(r'[-\*#@\.0-9\w]', re.UNICODE)
+END_IDENT_NUMBER = re.compile(r'[^-.%\w]', re.UNICODE)
+NUMBER = re.compile(r'^(-?[0-9]*\.?[0-9]+)([a-z%]*)$')
+UNICODE_HEX = re.compile(r'[a-fA-F0-9]+\s?')
 
 class CSSTokenizer:
 
@@ -458,7 +458,7 @@ class CSSTokenizer:
     return
 
   def feed(self, s):
-    assert isinstance(s, unicode)
+    assert isinstance(s, str)
     i = 0
     self.tokens = []
     while 0 <= i:
@@ -469,18 +469,18 @@ class CSSTokenizer:
     m = NEXT_TOKENS.search(x, i0)
     if not m: return (self.parse_main, -1)
     w = m.group(0)
-    if w == u'\n':
+    if w == '\n':
       self.tokens.append(w)
       return (self.parse_main, -1)
-    if w == u'/*':
+    if w == '/*':
       return (self.skip_comment, m.end(0))
-    if w == u'"' or w == u"'" or w == u'(':
+    if w == '"' or w == "'" or w == '(':
       self.ident = w
       self.end_string = END_STRING[w]
       self.ignore_ending = 1
       return self.parse_string(x, m.end(0))
-    if w == u'\\':
-      self.ident = u''
+    if w == '\\':
+      self.ident = ''
       self.end_string = END_IDENT_NUMBER
       self.ignore_ending = 0
       return self.parse_string(x, m.start(0))
@@ -507,11 +507,11 @@ class CSSTokenizer:
         break
       i1 = m.start(0)
       self.ident += x[i0:i1]
-      if m.group(0) == u'\\':
+      if m.group(0) == '\\':
         i1 = m.end(0)
         m = UNICODE_HEX.match(x, i1)    # not search!
         if m:
-          self.ident += unichr(int(m.group(0), 16))
+          self.ident += chr(int(m.group(0), 16))
           i0 = m.end(0)
         else:
           self.ident += x[i1]
@@ -522,7 +522,7 @@ class CSSTokenizer:
       if m:
         n = m.group(1)
         try:
-          if u'.' in n:
+          if '.' in n:
             n = float(n)
           else:
             n = int(n)
@@ -531,7 +531,7 @@ class CSSTokenizer:
         unit = str(m.group(2))
         if unit == 'px': unit = ''
         self.tokens.append((n, unit))
-      elif self.ident[0] in u'#(\'"':
+      elif self.ident[0] in '#(\'"':
         self.tokens.append(self.ident)
       else:
         self.tokens.append(self.ident.lower())
@@ -574,9 +574,9 @@ class CSSParser:
     self.dic = {}
     if not self.cursel: return
     sel = []
-    tag = u''
+    tag = ''
     for x in self.cursel:
-      if x == u':' or tag.endswith(u':'):
+      if x == ':' or tag.endswith(':'):
         tag += x
       else:
         if tag: sel.append(tag)
@@ -587,38 +587,38 @@ class CSSParser:
     return
 
   def parse_main(self, t):
-    if not isinstance(t, basestring): return
-    if t == u'{':
+    if not isinstance(t, str): return
+    if t == '{':
       self.fix_cursel()
       return self.parse_decl0
-    if t == u'}':
+    if t == '}':
       # assuming the end of "@media {...}"
       self.stylesheet.switch_media(None)
       return
-    if t == u'@import':
+    if t == '@import':
       return self.parse_import
-    if t == u'@media':
+    if t == '@media':
       self.args = []
       return self.parse_media
-    if t == u'@page':
+    if t == '@page':
       return self.parse_page
-    if t == u',':
+    if t == ',':
       self.fix_cursel()
       return
-    if t == u':' or t == u'>' or START_IDENT_NUMBER.match(t[0]):
+    if t == ':' or t == '>' or START_IDENT_NUMBER.match(t[0]):
       self.cursel.append(t)
     return
 
   def parse_decl0(self, t):
-    if t == u':' and self.prop:
+    if t == ':' and self.prop:
       return self.parse_decl1
-    if t == u'}':
+    if t == '}':
       self.stylesheet.add_decl(self.dic, self.selectors)
       self.selectors = []
       return self.parse_main
-    if t == u'\n':
+    if t == '\n':
       return
-    if isinstance(t, unicode):
+    if isinstance(t, str):
       t = t.encode('ascii', 'replace')
     elif not isinstance(t, str):
       return
@@ -627,32 +627,32 @@ class CSSParser:
     return
 
   def parse_decl1(self, t):
-    if t == u';' or t == u'\n' or t == u'}':
+    if t == ';' or t == '\n' or t == '}':
       if self.args:
         self.dic[self.prop.replace('-','_')] = self.args
-      if t == u'}':
+      if t == '}':
         return self.parse_decl0(t)
       return self.parse_decl0
     self.args.append(t)
     return
 
   def parse_import(self, t):
-    if t == u';' or t == u'\n':
+    if t == ';' or t == '\n':
       return self.parse_main
-    elif isinstance(t, basestring) and (t[0] in u'\042\047('):
+    elif isinstance(t, str) and (t[0] in '\042\047('):
       self.stylesheet.import_url(t[1:])
     return
   
   def parse_media(self, t):
-    if t == u'{':
+    if t == '{':
       self.stylesheet.switch_media(self.args)
       return self.parse_main
-    assert isinstance(t, unicode)
+    assert isinstance(t, str)
     self.args.append(t)
     return
 
   def parse_page(self, t):
-    if t == u'}':
+    if t == '}':
       return self.parse_main
     return
 
@@ -682,7 +682,7 @@ class ActiveStyleSheet(StyleSheet):
     return
   
   def import_url(self, url, media_spec=None):
-    from urlparse import urljoin
+    from urllib.parse import urljoin
     if not self.agent: return
     self.switch_media(media_spec)
     if not self.enabled: return
@@ -705,7 +705,7 @@ class ActiveStyleSheet(StyleSheet):
 ##
 def parse_inline(style, s, charset=None):
   if charset:
-    s = unicode(s, charset, 'replace')
+    s = str(s, charset, 'replace')
   CSSParser(style).feed_decl(CSSTokenizer().feed(s+';'))
   return
 
@@ -719,23 +719,23 @@ def read_stylesheet(args=None):
 def basic_test():
   stylesheet = StyleSheet()
   stylesheet.parse_lines([
-    u'p { background-color: white }\n',
-    u'ul { background-color: bbb }\n',
-    u'ul li { background-color: ccc; top:40pt }\n',
-    u'ul>li { background-color: ddd; }\n',
+    'p { background-color: white }\n',
+    'ul { background-color: bbb }\n',
+    'ul li { background-color: ccc; top:40pt }\n',
+    'ul>li { background-color: ddd; }\n',
     ])
   stylesheet.dump()  
-  print stylesheet.lookup(None, ['p'])
-  print stylesheet.lookup(None, ['ul'])
-  print stylesheet.lookup(None, ['li'], (set(), set(['','/ul'])))
-  p = Style(color=[u'white'], top=[(40,'')])
-  print stylesheet.lookup(p, ['p'])
-  print stylesheet.lookup(p, ['ul'])
-  print stylesheet.lookup(p, ['li'], (set(), set(['','/ul'])))
-  print stylesheet.lookup(p, ['li'], (set(['','/ul']), set(['foo'])))
+  print(stylesheet.lookup(None, ['p']))
+  print(stylesheet.lookup(None, ['ul']))
+  print(stylesheet.lookup(None, ['li'], (set(), set(['','/ul']))))
+  p = Style(color=['white'], top=[(40,'')])
+  print(stylesheet.lookup(p, ['p']))
+  print(stylesheet.lookup(p, ['ul']))
+  print(stylesheet.lookup(p, ['li'], (set(), set(['','/ul']))))
+  print(stylesheet.lookup(p, ['li'], (set(['','/ul']), set(['foo']))))
   s1 = Style(width=[(10,'')])
-  print s1
+  print(s1)
   s2 = Style(width=[(50,'em')])
-  print s2
+  print(s2)
   
 if __name__ == '__main__': read_stylesheet()

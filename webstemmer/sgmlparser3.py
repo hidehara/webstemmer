@@ -27,7 +27,7 @@
 #
 
 import re
-from htmlentitydefs import name2codepoint
+from html.entities import name2codepoint
 
 __all__ = [ 'SGMLParser3' ]
 
@@ -99,20 +99,20 @@ class SGMLParser3:
     name = name0.lower()
     if name in name2codepoint:
       # entityref
-      return unichr(name2codepoint[name])
+      return chr(name2codepoint[name])
     else:
       # charref
       if name.startswith('#x'):
         try:
-          return unichr( int(name[2:], 16) )
+          return chr( int(name[2:], 16) )
         except ValueError: # not a hex number, or not valid unichr number.
           pass
       elif name.startswith('#'):
         try:
-          return unichr( int(name[1:]) )
+          return chr( int(name[1:]) )
         except ValueError: # not a int number, or not valid unichr number.
           pass
-      return u'&'+name0
+      return '&'+name0
 
   def feed(self, x):
     """Feed a unicode string to the parser.
@@ -122,7 +122,7 @@ class SGMLParser3:
     are immediately interpreted and proper action is taken.
     """
     i = 0
-    assert isinstance(x, unicode)
+    assert isinstance(x, str)
     while 0 <= i and i < len(x):
       i = self.parse1(x, i)
     return self
@@ -412,6 +412,6 @@ class SGMLParser3:
     elif c == '-':
       self.comment_minuses += 1
       return i0+1
-    self.handle_characters(u'-' * min(self.comment_minuses, COMMENT_MAXMINUSES))
+    self.handle_characters('-' * min(self.comment_minuses, COMMENT_MAXMINUSES))
     self.parse1 = self.parse_comment_1
     return i0

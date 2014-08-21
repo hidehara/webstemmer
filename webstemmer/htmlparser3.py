@@ -52,22 +52,22 @@ class HTMLHandler:
 
   def start_unknown(self, tag, attrs):
     '''Handles the beginning of an unknown tag.'''
-    print 'HTMLHandler: start_unknown: tag=%s, attrs=%r' % (tag, attrs)
+    print('HTMLHandler: start_unknown: tag=%s, attrs=%r' % (tag, attrs))
     return
   
   def end_unknown(self, tag):
     '''Handles the end of an unknown tag.'''
-    print 'HTMLHandler: end_unknown: tag=%s' % tag
+    print('HTMLHandler: end_unknown: tag=%s' % tag)
     return
   
   def do_unknown(self, tag, attrs):
     '''Handles the end of an unknown immediate tag.'''
-    print 'HTMLHandler: do_unknown: tag=%s' % tag
+    print('HTMLHandler: do_unknown: tag=%s' % tag)
     return
   
   def handle_data(self, data):
     '''Handles text data and SGML entities.'''
-    print 'HTMLHandler: handle_data: data=%r' % data
+    print('HTMLHandler: handle_data: data=%r' % data)
     return
   
   def finish(self):
@@ -113,7 +113,7 @@ class HTMLParser3(SGMLParser3):
     self.charset = charset
     self.tagstack = []
     if self.debug:
-      print >>stderr, 'HTMLParser3: start'
+      print('HTMLParser3: start', file=stderr)
     return
   
   def set_charset(self, charset):
@@ -126,13 +126,13 @@ class HTMLParser3(SGMLParser3):
     self.charset = charset
     self.handler.set_charset(charset)
     if self.debug:
-      print >>stderr, 'set_charset: %s' % charset
+      print('set_charset: %s' % charset, file=stderr)
     return
 
   def handle_characters(self, data):
     '''Handles text.'''
     if self.debug:
-      print >>stderr, 'handle_data: %r' % data
+      print('handle_data: %r' % data, file=stderr)
     self.handler.handle_data(data)
     return
 
@@ -141,7 +141,7 @@ class HTMLParser3(SGMLParser3):
   
   def handle_decl(self, data):
     if self.debug:
-      print >>stderr, 'handle_decl: %r' % data
+      print('handle_decl: %r' % data, file=stderr)
     return
 
   CHARSET_FIND = re.compile(r'charset\s*=\s*([^">;\s]+)', re.I)
@@ -157,10 +157,10 @@ class HTMLParser3(SGMLParser3):
   def handle_start_tag(self, tag, attrs):
     if tag not in VALID_TAGS:
       if self.debug:
-        print >>stderr, 'ignored:', tag
+        print('ignored:', tag, file=stderr)
       return
     if self.debug:
-      print >>stderr, 'start: <%s> attrs=%r' % (tag, attrs)
+      print('start: <%s> attrs=%r' % (tag, attrs), file=stderr)
     attrs = dict(attrs)
     if tag in INLINE_IMMED_TAGS:
       if tag == 'hr':
@@ -206,7 +206,7 @@ class HTMLParser3(SGMLParser3):
   def handle_end_tag(self, tag, _):
     if tag not in VALID_TAGS:
       if self.debug:
-        print >>stderr, 'ignored:', tag
+        print('ignored:', tag, file=stderr)
       return
     if tag in NON_NESTED_TAGS:
       methodname = 'end_'+tag
@@ -224,7 +224,7 @@ class HTMLParser3(SGMLParser3):
       if t in tags:
         for tag in self.tagstack[i:]:
           if self.debug:
-            print >>stderr, 'end: </%s>' % tag
+            print('end: </%s>' % tag, file=stderr)
           methodname = 'end_'+tag
           if hasattr(self.handler, methodname):
             getattr(self.handler, methodname)(tag)
@@ -241,7 +241,7 @@ class HTMLParser3(SGMLParser3):
     while self.tagstack:
       self.end_previous(self.tagstack, ())
     if self.debug:
-      print >>stderr, 'HTMLParser3: close'
+      print('HTMLParser3: close', file=stderr)
     return self.handler.finish()
 
   def feed_file(self, fp, pos=0):
@@ -254,9 +254,9 @@ class HTMLParser3(SGMLParser3):
 
   def feed_byte(self, byte, pos=0):
     try:
-      from cStringIO import StringIO
+      from io import StringIO
     except ImportError:
-      from StringIO import StringIO
+      from io import StringIO
     return self.feed_file(StringIO(byte), pos)
 
 
@@ -264,7 +264,7 @@ class HTMLParser3(SGMLParser3):
 if __name__ == '__main__':
   import getopt
   def usage():
-    print 'usage: htmlparser3.py [-d] [-c charset] [url ...]'
+    print('usage: htmlparser3.py [-d] [-c charset] [url ...]')
     sys.exit(2)
   try:
     (opts, args) = getopt.getopt(sys.argv[1:], 'dc:')

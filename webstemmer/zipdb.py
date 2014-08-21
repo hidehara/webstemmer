@@ -69,7 +69,7 @@ class ZipDumper(Dumper):
   
   def __init__(self, fname, baseid):
     zipname = '%s.%s.zip' % (fname,baseid)
-    print >>stderr, 'Writing: %r' % zipname
+    print('Writing: %r' % zipname, file=stderr)
     self.fp = ZipFile(zipname, 'w', ZIP_DEFLATED)
     return
   
@@ -95,11 +95,11 @@ class ZipLoader:
   
   def run(self):
     fp = ZipFile(self.fname, 'r')
-    print >>stderr, 'Opening: %r...' % self.fname
+    print('Opening: %r...' % self.fname, file=stderr)
     for name in fp.namelist():
       if not self.acldb or self.acldb.allowed(name):
         if self.debug:
-          print >>stderr, 'Load: %s' % name
+          print('Load: %s' % name, file=stderr)
         if self.consumer:
           self.consumer.feed_page(name, fp.read(name))
     fp.close()

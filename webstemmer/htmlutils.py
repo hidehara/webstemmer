@@ -53,13 +53,13 @@ def getdecoder(name): return codecs.getdecoder(ALT_CODECS.get(name, name))
 
 
 # Remove extra blanks.
-RMSP_PAT = re.compile(ur'\s+')
+RMSP_PAT = re.compile(r'\s+')
 def rmsp(s):
-  return RMSP_PAT.sub(u' ', s.strip())
+  return RMSP_PAT.sub(' ', s.strip())
 
 # Concatenate all strings with removing extra blanks.
 def concat(r):
-  return rmsp(u''.join(r)).strip()
+  return rmsp(''.join(r)).strip()
 
 # quotestr(s, codec)
 def quotestr(s, quote_special=True):

@@ -89,7 +89,7 @@ class LayoutPatternSet:
     pat = re.compile(mangle_pat)
     def encode_element2(e):
       return e.tag + ''.join(sorted( ':%s=%s' % (k.lower(), ''.join(pat.findall(e.attrs[k].lower())))
-                                     for k in e.attrs.keys() if k in KEY_ATTRS ))
+                                     for k in list(e.attrs.keys()) if k in KEY_ATTRS ))
     self.encoder = encode_element2
     return
   
@@ -130,28 +130,28 @@ class LayoutPatternSet:
     enc = lambda x: x.encode(codec_out, 'replace')
     (pat1, layout) = self.identify_layout(tree, pat_threshold, strict=strict)
     if not layout:
-      print '!UNMATCHED: %s' % name
+      print('!UNMATCHED: %s' % name)
     else:
-      print '!MATCHED: %s' % name
-      print 'PATTERN: %s' % pat1.name
+      print('!MATCHED: %s' % name)
+      print('PATTERN: %s' % pat1.name)
       if self.debug:
         for sect in layout:
-          print >>stderr, 'DEBUG: SECT-%d: diffscore=%.2f' % (sect.id, sect.diffscore)
+          print('DEBUG: SECT-%d: diffscore=%.2f' % (sect.id, sect.diffscore), file=stderr)
           for b in sect.blocks:
-            print >>stderr, '   %s' % enc(b.orig_text)
-      for sectno in xrange(len(layout)):
+            print('   %s' % enc(b.orig_text), file=stderr)
+      for sectno in range(len(layout)):
         sect = layout[sectno]
         if sectno == pat1.title_sectno:
           for b in sect.blocks:
-            print 'TITLE: %s' % enc(b.orig_text)
+            print('TITLE: %s' % enc(b.orig_text))
         elif diffscore_threshold <= sect.diffscore:
           if pat1.title_sectno < sectno and main_threshold <= sect.mainscore:
             for b in sect.blocks:
-              print 'MAIN-%d: %s' % (sect.id, enc(b.orig_text))
+              print('MAIN-%d: %s' % (sect.id, enc(b.orig_text)))
           else:
             for b in sect.blocks:
-              print 'SUB-%d: %s' % (sect.id, enc(b.orig_text))
-    print
+              print('SUB-%d: %s' % (sect.id, enc(b.orig_text)))
+    print()
     return
 
 
@@ -191,7 +191,7 @@ class TextExtractor:
 def main():
   import getopt
   def usage():
-    print '''usage: extract.py [-d)ebug] [-S)trict] [-t pat_threshold] [-T diffscore_threshold] [-M mainscore_threshold] [-c default_charset] [-C codec_out] [-a accept_pat] [-j reject_pat] [-P mangle_pat] patfile zipfile ...'''
+    print('''usage: extract.py [-d)ebug] [-S)trict] [-t pat_threshold] [-T diffscore_threshold] [-M mainscore_threshold] [-c default_charset] [-C codec_out] [-a accept_pat] [-j reject_pat] [-P mangle_pat] patfile zipfile ...''')
     sys.exit(2)
   try:
     (opts, args) = getopt.getopt(sys.argv[1:], 'dSt:T:M:c:C:a:j:P:')

@@ -40,13 +40,13 @@ def main(args):
     dic[k] = (ndocs+ndocs1,correct+correct1,ndocs1,correct1)
   for k in sorted(dic.keys()):
     (ndocs,correct,ndocs1,correct1) = dic[k]
-    print '%20s: %4d/ %4d %s %4d/ %4d %s' % (k, correct, ndocs, percent(correct,ndocs),
-                                           correct1, ndocs1, percent(correct1,ndocs1))
+    print('%20s: %4d/ %4d %s %4d/ %4d %s' % (k, correct, ndocs, percent(correct,ndocs),
+                                           correct1, ndocs1, percent(correct1,ndocs1)))
     totaldocs += ndocs
     totalcorrect += correct
   if totaldocs:
-    print '-'*60
-    print '%20s:%5d/%5d %s' % ('TOTAL', totalcorrect,totaldocs, percent(totalcorrect,totaldocs))
+    print('-'*60)
+    print('%20s:%5d/%5d %s' % ('TOTAL', totalcorrect,totaldocs, percent(totalcorrect,totaldocs)))
   return
 
 if __name__ == "__main__": main(sys.argv[1:])

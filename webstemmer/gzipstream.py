@@ -7,7 +7,7 @@ but random access is not allowed."""
 
 import struct, sys, time
 import zlib
-import __builtin__
+import builtins
 
 __all__ = ["GzipFile","open"]
 
@@ -21,12 +21,12 @@ def U32(i):
     If it's >= 2GB when viewed as a 32-bit unsigned int, return a long.
     """
     if i < 0:
-        i += 1L << 32
+        i += 1 << 32
     return i
 
 def LOWU32(i):
     """Return the low-order 32 bits of an int, as a non-negative int."""
-    return i & 0xFFFFFFFFL
+    return i & 0xFFFFFFFF
 
 def write32(output, value):
     output.write(struct.pack("<l", value))
@@ -88,7 +88,7 @@ class GzipFile:
         if mode and 'b' not in mode:
             mode += 'b'
         if fileobj is None:
-            fileobj = self.myfileobj = __builtin__.open(filename, mode or 'rb')
+            fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
         if filename is None:
             if hasattr(fileobj, 'name'): filename = fileobj.name
             else: filename = ''
@@ -113,7 +113,7 @@ class GzipFile:
                                              zlib.DEF_MEM_LEVEL,
                                              0)
         else:
-            raise IOError, "Mode " + mode + " not supported"
+            raise IOError("Mode " + mode + " not supported")
 
         self.fileobj = fileobj
         self.offset = 0
@@ -143,7 +143,7 @@ class GzipFile:
         if fname:
             flags = FNAME
         self.fileobj.write(chr(flags))
-        write32u(self.fileobj, long(time.time()))
+        write32u(self.fileobj, int(time.time()))
         self.fileobj.write('\002')
         self.fileobj.write('\377')
         if fname:
@@ -158,12 +158,12 @@ class GzipFile:
         if magic == '':
             # First, check if we're at the end of the file;
             # if so, it's time to stop; no more members to read.
-            raise EOFError, "Reached EOF"
+            raise EOFError("Reached EOF")
         if magic != '\037\213':
-            raise IOError, 'Not a gzipped file'
+            raise IOError('Not a gzipped file')
         method = ord( self._fileobj_read(1) )
         if method != 8:
-            raise IOError, 'Unknown compression method'
+            raise IOError('Unknown compression method')
         flag = ord( self._fileobj_read(1) )
         # modtime = self.fileobj.read(4)
         # extraflag = self.fileobj.read(1)
@@ -197,7 +197,7 @@ class GzipFile:
             raise IOError(errno.EBADF, "write() on read-only GzipFile object")
 
         if self.fileobj is None:
-            raise ValueError, "write() on closed GzipFile object"
+            raise ValueError("write() on closed GzipFile object")
         if len(data) > 0:
             self.size = self.size + len(data)
             self.crc = zlib.crc32(data, self.crc)
@@ -249,7 +249,7 @@ class GzipFile:
 
     def _read(self, size=1024):
         if self.fileobj is None:
-            raise EOFError, "Reached EOF"
+            raise EOFError("Reached EOF")
 
         if self._new_member:
             # If the _new_member flag is set, we have to
@@ -267,7 +267,7 @@ class GzipFile:
         # after reading the compressed part, there must be
         # something left in self._leftbuf. Otherwise, the file is incomplete.
         if not buf:
-            raise IOError, 'Unexpected EOF.'
+            raise IOError('Unexpected EOF.')
 
         uncompress = self.decompress.decompress(buf)
         self._add_read_data( uncompress )
@@ -299,9 +299,9 @@ class GzipFile:
         (crc32, isize) = struct.unpack('<LL', self._fileobj_read(8))
         isize = U32(isize)              # may exceed 2GB
         if U32(crc32) != U32(self.crc):
-            raise IOError, "CRC check failed"
+            raise IOError("CRC check failed")
         elif isize != LOWU32(self.size):
-            raise IOError, "Incorrect length of data produced"
+            raise IOError("Incorrect length of data produced")
 
     def close(self):
         if self.mode == WRITE:
@@ -371,7 +371,7 @@ class GzipFile:
             self.read(count % 1024)
 
     def readline(self, size=-1):
-        if size < 0: size = sys.maxint
+        if size < 0: size = sys.maxsize
         bufs = []
         readsize = min(100, size)    # Read from the file in small chunks
         while True:
@@ -401,7 +401,7 @@ class GzipFile:
     def readlines(self, sizehint=0):
         # Negative numbers result in reading all the lines
         if sizehint <= 0:
-            sizehint = sys.maxint
+            sizehint = sys.maxsize
         L = []
         while sizehint > 0:
             line = self.readline()
@@ -419,7 +419,7 @@ class GzipFile:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         line = self.readline()
         if line:
             return line
@@ -444,16 +444,16 @@ def _test():
                 g = sys.stdout
             else:
                 if arg[-3:] != ".gz":
-                    print "filename doesn't end in .gz:", repr(arg)
+                    print("filename doesn't end in .gz:", repr(arg))
                     continue
                 f = open(arg, "rb")
-                g = __builtin__.open(arg[:-3], "wb")
+                g = builtins.open(arg[:-3], "wb")
         else:
             if arg == "-":
                 f = sys.stdin
                 g = GzipFile(filename="", mode="wb", fileobj=sys.stdout)
             else:
-                f = __builtin__.open(arg, "rb")
+                f = builtins.open(arg, "rb")
                 g = open(arg + ".gz", "wb")
         while True:
             chunk = f.read(1024)

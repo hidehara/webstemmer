@@ -29,7 +29,7 @@
 import sys, re, random
 from math import log
 from os.path import dirname
-from urlparse import urljoin
+from urllib.parse import urljoin
 from difflib import SequenceMatcher
 from webstemmer.htmlparser3 import HTMLParser3
 from webstemmer.textcrawler import HTMLLinkFinder, wash_url
@@ -49,8 +49,8 @@ stderr = sys.stderr
 def titlability0(s1, s2):
   # s1:title, s2:body
   m = [ [ (0,0) for _ in s2 ] for _ in s1 ]
-  for p1 in xrange(len(s1)):
-    for p2 in xrange(len(s2)):
+  for p1 in range(len(s1)):
+    for p2 in range(len(s2)):
       if s1[p1] == s2[p2]:
         if p1 == 0 or p2 == 0:
           (a,b) = (0,0)
@@ -82,7 +82,7 @@ def diff_score(s1, s2):
 def find_lcs(s1, s2):
   r = []
   for (a,b,n) in seqmatch(s1, s2):
-    r.extend( (a+i,b+i) for i in xrange(n) )
+    r.extend( (a+i,b+i) for i in range(n) )
   return r
 
 def gmax(seq, key=lambda x:x, default=object()):
@@ -166,7 +166,7 @@ def find_clusters(para_blocks):
   # clusters = [ ( doc1_blocks1, doc2_blocks1, ..., docm_blocks1 ),
   #                ...
   #              ( doc1_blocksn, doc2_blocksn, ..., docm_blocksn ) ]
-  clusters = zip(*[ retrieve_blocks(common_paths, blocks) for blocks in para_blocks ])
+  clusters = list(zip(*[ retrieve_blocks(common_paths, blocks) for blocks in para_blocks ]))
   
   # compare each cluster of text blocks.
   layout = []
@@ -212,28 +212,28 @@ class LayoutCluster:
     largest = gmax(layout, key=lambda sect: sect.diffscore*sect.weight_avg)
     if self.debug:
       for sect in layout:
-        print >>stderr, ' main: sect=%s, diffscore=%.2f, mainscore=%.2f, text=%s' % \
+        print(' main: sect=%s, diffscore=%.2f, mainscore=%.2f, text=%s' % \
               (sect, sect.diffscore, sect.diffscore*sect.weight_avg,
-               ''.join( b.sig_text for b in sect.blockgroups[0]))
+               ''.join( b.sig_text for b in sect.blockgroups[0])), file=stderr)
 
     # discover title and main sections.
     if self.debug:
-      print >>stderr, 'Fixating: cluster=%r, pattern=%r, largest=%r' % (self, self.pattern, largest)
+      print('Fixating: cluster=%r, pattern=%r, largest=%r' % (self, self.pattern, largest), file=stderr)
     title_sect_voted = {}
     for (pageno,p) in enumerate(self.pages):
       title_sect = None
       title_score = title_threshold
       if self.debug:
-        print >>stderr, '%r: anchor_strs=%r' % (p, p.anchor_strs)
+        print('%r: anchor_strs=%r' % (p, p.anchor_strs), file=stderr)
       # if anchor strings are available, compare them to the section texts.
       if p.anchor_strs:
-        for i in xrange(largest.id):
+        for i in range(largest.id):
           sect = layout[i]
           title = ''.join( b.sig_text for b in sect.blockgroups[pageno] )
           if not title: continue
           score = max( dice_coeff(rt, title) for rt in p.anchor_strs if rt ) * sect.diffscore
           if self.debug:
-            print >>stderr, ' title: sect=%s, score=%.2f, title=%r' % (sect, score, title)
+            print(' title: sect=%s, score=%.2f, title=%r' % (sect, score, title), file=stderr)
           if title_score < score:
             (title_sect, title_score) = (sect, score)
 
@@ -241,24 +241,24 @@ class LayoutCluster:
       if not title_sect and 1 < len(layout):
         largest_text = ''.join( b.sig_text for b in largest.blockgroups[pageno] )
         if self.debug:
-          print >>stderr, 'FALLBACK:', largest_text[:50]
+          print('FALLBACK:', largest_text[:50], file=stderr)
         title_score = 1.0
-        for i in xrange(largest.id):
+        for i in range(largest.id):
           sect = layout[i]
           title = ''.join( b.sig_text for b in sect.blockgroups[pageno] )
           if not title: continue
           score = titlability(title, largest_text) * sect.diffscore
           if self.debug:
-            print >>stderr, ' sect=%s, score=%.2f, title=%r' % (sect, score, title)
+            print(' sect=%s, score=%.2f, title=%r' % (sect, score, title), file=stderr)
           if title_score < score:
             (title_sect, title_score) = (sect, score)
 
       if title_sect not in title_sect_voted: title_sect_voted[title_sect] = 0
       title_sect_voted[title_sect] += 1
       if self.debug:
-        print >>stderr, 'title_sect=%r' % title_sect
+        print('title_sect=%r' % title_sect, file=stderr)
 
-    (title_sect, dummy) = gmax(title_sect_voted.iteritems(), key=lambda (k,v): v)
+    (title_sect, dummy) = gmax(iter(title_sect_voted.items()), key=lambda k_v: k_v[1])
     if title_sect:
       self.title_sectno = title_sect.id
     else:
@@ -266,11 +266,11 @@ class LayoutCluster:
     return
 
   def dump(self):
-    print '#', self.score, self
+    print('#', self.score, self)
     for p in self.pages:
-      print '#\t', p.name
-    print (self.score, self.name, self.title_sectno, self.pattern)
-    print
+      print('#\t', p.name)
+    print((self.score, self.name, self.title_sectno, self.pattern))
+    print()
     return
 
 
@@ -308,7 +308,7 @@ class LayoutAnalyzer:
     pat = re.compile(mangle_pat)
     def encode_element2(e):
       return e.tag + ''.join(sorted( ':%s=%s' % (k.lower(), ''.join(pat.findall(e.attrs[k].lower())))
-                                     for k in e.attrs.keys() if k in KEY_ATTRS ))
+                                     for k in list(e.attrs.keys()) if k in KEY_ATTRS ))
     self.encoder = encode_element2
     return
   
@@ -327,14 +327,14 @@ class LayoutAnalyzer:
     return
 
   def analyze(self, cluster_threshold=0.97, title_threshold=0.6, max_sample=0, verbose=True):
-    print >>stderr, 'Clustering %d files with threshold=%f...' % (len(self.pages), cluster_threshold)
+    print('Clustering %d files with threshold=%f...' % (len(self.pages), cluster_threshold), file=stderr)
     clusters = []
-    keys = self.pages.keys()
+    keys = list(self.pages.keys())
 
     for (urlno,url1) in enumerate(keys):
       page1 = self.pages[url1]
       if self.debug:
-        print >>stderr, ' %d: %r' % (urlno, page1)
+        print(' %d: %r' % (urlno, page1), file=stderr)
       elif verbose:
         stderr.write(' %d: ' % urlno)
       # search from the smallest cluster (not sure if this helps actually...)
@@ -352,20 +352,20 @@ class LayoutAnalyzer:
           total_weight = sum( c.weight for c in layout )          
           sim = total_weight / lowerbound(float(page1.weight + page2.weight), 1)
           if self.debug:
-            print >>stderr, '    sim=%.3f (%d): %r' % (sim, total_weight, page2)
+            print('    sim=%.3f (%d): %r' % (sim, total_weight, page2), file=stderr)
           elif verbose:
             stderr.write('.'); stderr.flush()
           if sim < cluster_threshold: break
         else:
           if verbose:
-            print >>stderr, 'joined: %r' % c0
+            print('joined: %r' % c0, file=stderr)
           c0.add(page1)
           break
       else:
         c0 = LayoutCluster(url1, debug=self.debug)
         c0.add(page1)
         if verbose:
-          print >>stderr, 'formed: %r' % c0
+          print('formed: %r' % c0, file=stderr)
         clusters.append(c0)
 
     stderr.write('Fixating')
@@ -373,7 +373,7 @@ class LayoutAnalyzer:
       c.fixate(title_threshold)
       stderr.write('.'); stderr.flush()
     clusters.sort(key=lambda c: c.score, reverse=True)
-    print >>stderr
+    print(file=stderr)
     return clusters
 
 
@@ -405,7 +405,7 @@ class PageFeeder:
 
   def feed_page(self, name, data):
     if name == self.linkinfo:
-      print >>stderr, 'Loading: %r' % name
+      print('Loading: %r' % name, file=stderr)
       for line in data.split('\n'):
         if line:
           (name,strs) = eval(line)
@@ -425,13 +425,13 @@ class PageFeeder:
       if not self.acldb or self.acldb.allowed(name):
         tree = parse(data, charset=self.default_charset, base_href=base_href)
         n = self.analyzer.add_tree(name, tree)
-        print >>stderr, 'Added: %d: %s' % (n, name)
+        print('Added: %d: %s' % (n, name), file=stderr)
       else:
-        print >>stderr, 'Skipped: %s' % name
+        print('Skipped: %s' % name, file=stderr)
     return
 
   def close(self):
-    for (name, strs) in self.dic.iteritems():
+    for (name, strs) in self.dic.items():
       self.analyzer.add_anchor_strs(name, strs)
     return
 
@@ -479,9 +479,9 @@ def main():
   analyzer = LayoutAnalyzer(debug=debug)
   if mangle_pat:
     analyzer.set_encoder(mangle_pat)
-  print '### version=%s' % WEBSTEMMER_VERSION
+  print('### version=%s' % WEBSTEMMER_VERSION)
   for fname in args:
-    print '### fname=%r' % fname
+    print('### fname=%r' % fname)
     feeder = PageFeeder(analyzer, linkinfo=linkinfo, acldb=acldb,
                         default_charset=default_charset, debug=debug)
     if fname.endswith('.zip'):
@@ -494,7 +494,7 @@ def main():
       for line in fp:
         name = line.strip()
         if debug:
-          print >>stderr, 'Loading: %r' % name
+          print('Loading: %r' % name, file=stderr)
         fp2 = file(name)
         data = fp2.read()
         fp2.close()
@@ -506,13 +506,13 @@ def main():
       fp.close()
       feeder.feed_page(fname, data)
     feeder.close()
-  print '### cluster_threshold=%f' % cluster_threshold
-  print '### title_threshold=%f' % title_threshold
-  print '### pages=%d' % len(analyzer.pages)
-  print
+  print('### cluster_threshold=%f' % cluster_threshold)
+  print('### title_threshold=%f' % title_threshold)
+  print('### pages=%d' % len(analyzer.pages))
+  print()
   if mangle_pat:
-    print '!mangle_pat=%r' % mangle_pat
-    print
+    print('!mangle_pat=%r' % mangle_pat)
+    print()
   for c in analyzer.analyze(cluster_threshold, title_threshold, max_sample):
     if c.pattern and score_threshold <= c.score:
       c.dump()

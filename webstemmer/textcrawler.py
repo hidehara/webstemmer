@@ -31,22 +31,22 @@
 import sys, re, time, socket
 from webstemmer.htmlparser3 import HTMLParser3, HTMLHandler
 from webstemmer.zipdb import ACLDB, ZipDumper, NullDumper
-from httplib import HTTPConnection, BadStatusLine
-from robotparser import RobotFileParser
+from .httplib import HTTPConnection, BadStatusLine
+from urllib.robotparser import RobotFileParser
 from gzip import GzipFile
-from cookielib import MozillaCookieJar
+from http.cookiejar import MozillaCookieJar
 from urllib import addinfourl
-from urllib2 import Request
-from urlparse import urlsplit, urljoin
+from urllib.request import Request
+from urllib.parse import urlsplit, urljoin
 
 stderr = sys.stderr
 
 MAX_PAGE_LEN = 1000000 # 1MB max
 
 try:
-  from cStringIO import StringIO
+  from io import StringIO
 except ImportError:
-  from StringIO import StringIO
+  from io import StringIO
 
 from bsddb import hashopen as dbmopen
 
@@ -70,16 +70,16 @@ class URLDB:
     self.db = dbmopen(path, 'c')
     self.debug = debug
     if self.debug:
-      print >>stderr, 'URLDB open: %r' % path
+      print('URLDB open: %r' % path, file=stderr)
     return
 
   def visited(self, url):
     import md5, struct
     k = md5.md5(url).digest()
-    v = self.db.has_key(k)
+    v = k in self.db
     self.db[k] = struct.pack('<L', int(time.time()))
     if self.debug and not v:
-      print >>stderr, 'URLDB added: %r' % url
+      print('URLDB added: %r' % url, file=stderr)
     return v
 
 
@@ -135,17 +135,17 @@ class SimpleCrawler:
     if (not self.curlevel) or (not url) or (url in self.crawled): return False
     if not self.robotstxt.can_fetch(self.USER_AGENT, url):
       if self.debug:
-        print >>stderr, 'DISALLOW: %r' % url
+        print('DISALLOW: %r' % url, file=stderr)
       return None
     if self.debug:
-      print >>stderr, 'INJECT: %r' % url
+      print('INJECT: %r' % url, file=stderr)
     self.crawled[url] = 1
     self.urls.append((url, self.curlevel-1))
     return True
 
   def get1(self, url, maxretry=3, maxredirect=3):
     if self.debug:
-      print >>stderr, 'GET: %r' % url
+      print('GET: %r' % url, file=stderr)
     # loop
     for rtry in range(maxredirect):
       # forge urllib2.Request object.
@@ -161,21 +161,21 @@ class SimpleCrawler:
       for ctry in range(maxretry):
         try:
           if not self.conn:
-            print >>stderr, 'Making connection: %r...' % (self.hostport,)
+            print('Making connection: %r...' % (self.hostport,), file=stderr)
             self.conn = HTTPConnection(self.hostport)
           self.conn.request('GET', req.get_selector().replace(' ',''), '', headers)
 	  self.conn.sock.settimeout(self.timeout)
           resp = self.conn.getresponse()
           break
-        except BadStatusLine, x:
+        except BadStatusLine as x:
           # connection closed unexpectedly
-          print >>stderr, 'Connection closed unexpectedly.'
+          print('Connection closed unexpectedly.', file=stderr)
           # it restarts the connection...
           self.conn.close()
           self.conn = None
-        except socket.error, x:
+        except socket.error as x:
           # connection closed unexpectedly
-          print >>stderr, 'Socket error:', x
+          print('Socket error:', x, file=stderr)
           self.conn.close()
           self.conn = None
       else:
@@ -200,7 +200,7 @@ class SimpleCrawler:
         url0 = urljoin(url, resp.getheader('Location', ''))
         url1 = self.accept_url(url0)
         if url1 and (url1 not in self.crawled or self.crawled[url1] != 2):
-          print >>stderr, 'REDIRECTED: Status=%d: %r' % (status, url1)
+          print('REDIRECTED: Status=%d: %r' % (status, url1), file=stderr)
           url = url1
           continue
         else:
@@ -223,10 +223,10 @@ class SimpleCrawler:
       time.sleep(self.delay)
     (url, level) = self.urls.pop()
     if self.debug:
-      print >>stderr, 'CRAWL(%d): %r' % (level, url)
+      print('CRAWL(%d): %r' % (level, url), file=stderr)
     visited = (self.urldb and self.urldb.visited(url))
     if visited:
-      print >>stderr, 'VISITED: %r' % url
+      print('VISITED: %r' % url, file=stderr)
       self.crawled[url] = 2
     if visited and level == 0: return
     try:
@@ -239,10 +239,10 @@ class SimpleCrawler:
       self.curlevel = level
       self.parse1(fp, url, mimetype, charset, visited)
       fp.close()
-    except (CrawlerWarning,CrawlerPageError), x:
-      print >>stderr, 'WARNING:', x
-    except socket.error, x:
-      print >>stderr, 'SOCKET_ERROR:', x
+    except (CrawlerWarning,CrawlerPageError) as x:
+      print('WARNING:', x, file=stderr)
+    except socket.error as x:
+      print('SOCKET_ERROR:', x, file=stderr)
       self.conn.close()
       self.conn = None
     return
@@ -251,7 +251,7 @@ class SimpleCrawler:
     while self.urls:
       self.crawl1()
       if self.debug:
-        print >>stderr, 'URLS_LEFT: %d' % len(self.urls)
+        print('URLS_LEFT: %d' % len(self.urls), file=stderr)
       else:
         stderr.write('.'); stderr.flush()
     return
@@ -273,7 +273,7 @@ class RefTextDB:
 
   def dump(self):
     fp = StringIO()
-    for (name,strs) in self.dic.iteritems():
+    for (name,strs) in self.dic.items():
       fp.write(repr( (self.baseid+name, strs) ))
       fp.write('\n')
     return fp.getvalue()
@@ -372,7 +372,7 @@ class TextCrawler(SimpleCrawler):
         name = self.baseid+url[6:]
         self.consumer.feed_page(name, body)
         if self.debug:
-          print >>stderr, 'FEED: %r' % name
+          print('FEED: %r' % name, file=stderr)
     return
   
 
@@ -380,9 +380,9 @@ class TextCrawler(SimpleCrawler):
 def main():
   import getopt
   def usage():
-    print '''usage: textcrawler.py -o outfile [-d] [-b baseid] [-a accept_pat] [-j reject_pat]
+    print('''usage: textcrawler.py -o outfile [-d] [-b baseid] [-a accept_pat] [-j reject_pat]
     [-i index_html] [-m level] [-k cookie_file] [-c default_charset]
-    [-U urldb] [-D delay] [-T timeout] [-L linkinfo] [url ...]'''
+    [-U urldb] [-D delay] [-T timeout] [-L linkinfo] [url ...]''')
     sys.exit(2)
   try:
     (opts, args) = getopt.getopt(sys.argv[1:], 'db:a:j:i:m:k:c:C:U:o:D:T:L:')

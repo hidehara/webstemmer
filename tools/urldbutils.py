@@ -33,7 +33,7 @@ from bsddb import hashopen as dbmopen
 
 # reorganize db
 def reorgdb(outname, fname, threshold, verbose):
-  print >>stderr, 'input=%s, output=%s, threshold=%d' % (fname, outname, threshold)
+  print('input=%s, output=%s, threshold=%d' % (fname, outname, threshold), file=stderr)
   try:
     os.stat(outname)
     raise IOError('file %r already exists.' % outname)
@@ -44,7 +44,7 @@ def reorgdb(outname, fname, threshold, verbose):
   out = dbmopen(outname, 'c')
   remain = 0
   filtered = 0
-  for (k,v) in db.iteritems():
+  for (k,v) in db.items():
     t = struct.unpack('<L', v)[0]
     if now-t < threshold:
       out[k] = v
@@ -52,8 +52,8 @@ def reorgdb(outname, fname, threshold, verbose):
     else:
       filtered += 1
       if verbose:
-        print ''.join([ '%02x' % ord(c) for c in k ]), time.asctime(time.localtime(t)), '(out)'
-  print >>stderr, 'total: %d (remain: %d, filtered: %d)' % (remain+filtered, remain, filtered)
+        print(''.join([ '%02x' % ord(c) for c in k ]), time.asctime(time.localtime(t)), '(out)')
+  print('total: %d (remain: %d, filtered: %d)' % (remain+filtered, remain, filtered), file=stderr)
   db.close()
   out.close()
   return
@@ -62,13 +62,13 @@ def reorgdb(outname, fname, threshold, verbose):
 def dispdb(fname, threshold, verbose):
   now = int(time.time())
   db = dbmopen(fname, 'r')
-  for (k,v) in db.iteritems():
+  for (k,v) in db.items():
     t = struct.unpack('<L', v)[0]
-    print ''.join([ '%02x' % ord(c) for c in k ]), time.asctime(time.localtime(t)),
+    print(''.join([ '%02x' % ord(c) for c in k ]), time.asctime(time.localtime(t)), end=' ')
     if threshold <= now-t:
-      print '(out)'
+      print('(out)')
     else:
-      print '(in)'
+      print('(in)')
   db.close()
   return
 
@@ -76,7 +76,7 @@ def dispdb(fname, threshold, verbose):
 if __name__ == "__main__":
   import getopt
   def usage():
-    print "usage: urldbutils.py [-v)erbose] {-D)ump|-R)eorganize} [-t days] urldb [urldb.old]"
+    print("usage: urldbutils.py [-v)erbose] {-D)ump|-R)eorganize} [-t days] urldb [urldb.old]")
     sys.exit(2)
   try:
     (opts, args) = getopt.getopt(sys.argv[1:], "vDRt:")
@@ -91,7 +91,7 @@ if __name__ == "__main__":
   if not mode or not args:
     usage()
   if not threshold:
-    print >>sys.stderr, 'please specify threshold.'
+    print('please specify threshold.', file=sys.stderr)
     usage()
   if mode == 1:
     dispdb(args[0], threshold, verbose)

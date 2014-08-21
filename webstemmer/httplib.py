@@ -69,12 +69,12 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 import errno
 import mimetools
 import socket
-from urlparse import urlsplit
+from urllib.parse import urlsplit
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 __all__ = ["HTTP", "HTTPResponse", "HTTPConnection", "HTTPSConnection",
            "HTTPException", "NotConnected", "UnknownProtocol",
@@ -290,7 +290,7 @@ class HTTPResponse:
         # Initialize with Simple-Response defaults
         line = self.fp.readline()
         if self.debuglevel > 0:
-            print "reply:", repr(line)
+            print("reply:", repr(line))
         if not line:
             # Presumably, the server closed the connection before
             # sending a valid response.
@@ -339,7 +339,7 @@ class HTTPResponse:
                 if not skip:
                     break
                 if self.debuglevel > 0:
-                    print "header:", skip
+                    print("header:", skip)
 
         self.status = status
         self.reason = reason.strip()
@@ -362,7 +362,7 @@ class HTTPResponse:
         self.msg = HTTPMessage(self.fp, 0)
         if self.debuglevel > 0:
             for hdr in self.msg.headers:
-                print "header:", hdr,
+                print("header:", hdr, end=' ')
 
         # don't let the msg keep an fp
         self.msg.fp = None
@@ -495,7 +495,7 @@ class HTTPResponse:
                     line = line[:i] # strip chunk-extensions
                 try:
                     chunk_left = int(line, 16)
-                except ValueError, msg:
+                except ValueError as msg:
                     self.close()
                     return value
                 if chunk_left == 0:
@@ -563,7 +563,7 @@ class HTTPResponse:
         """Return list of (header, value) tuples."""
         if self.msg is None:
             raise ResponseNotReady()
-        return self.msg.items()
+        return list(self.msg.items())
 
 
 class HTTPConnection:
@@ -617,18 +617,18 @@ class HTTPConnection:
             try:
                 self.sock = socket.socket(af, socktype, proto)
                 if self.debuglevel > 0:
-                    print "connect: (%s, %s)" % (self.host, self.port)
+                    print("connect: (%s, %s)" % (self.host, self.port))
                 self.sock.connect(sa)
-            except socket.error, msg:
+            except socket.error as msg:
                 if self.debuglevel > 0:
-                    print 'connect fail:', (self.host, self.port)
+                    print('connect fail:', (self.host, self.port))
                 if self.sock:
                     self.sock.close()
                 self.sock = None
                 continue
             break
         if not self.sock:
-            raise socket.error, msg
+            raise socket.error(msg)
 
     def close(self):
         """Close the connection to the HTTP server."""
@@ -654,10 +654,10 @@ class HTTPConnection:
         # NOTE: we DO propagate the error, though, because we cannot simply
         #       ignore the error... the caller will know if they can retry.
         if self.debuglevel > 0:
-            print "send:", repr(str)
+            print("send:", repr(str))
         try:
             self.sock.sendall(str)
-        except socket.error, v:
+        except socket.error as v:
             if v[0] == 32:      # Broken pipe
                 self.close()
             raise
@@ -803,7 +803,7 @@ class HTTPConnection:
 
         try:
             self._send_request(method, url, body, headers)
-        except socket.error, v:
+        except socket.error as v:
             # trap 'Broken pipe' if we're allowed to automatically reconnect
             if v[0] != 32 or not self.auto_open:
                 raise
@@ -823,7 +823,7 @@ class HTTPConnection:
 
         if body and ('content-length' not in header_names):
             self.putheader('Content-Length', str(len(body)))
-        for hdr, value in headers.iteritems():
+        for hdr, value in headers.items():
             self.putheader(hdr, value)
         self.endheaders()
 
@@ -940,7 +940,7 @@ class SSLFile(SharedSocketClient):
         while True:
             try:
                 buf = self._ssl.read(self._bufsize)
-            except socket.sslerror, err:
+            except socket.sslerror as err:
                 if (err[0] == socket.SSL_ERROR_WANT_READ
                     or err[0] == socket.SSL_ERROR_WANT_WRITE):
                     continue
@@ -948,7 +948,7 @@ class SSLFile(SharedSocketClient):
                     or err[0] == socket.SSL_ERROR_EOF):
                     break
                 raise
-            except socket.error, err:
+            except socket.error as err:
                 if err[0] == errno.EINTR:
                     continue
                 if err[0] == errno.EBADF:
@@ -1017,7 +1017,7 @@ class SSLFile(SharedSocketClient):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         line = self.readline()
         if not line:
             raise StopIteration
@@ -1136,7 +1136,7 @@ class HTTP:
         """
         try:
             response = self._conn.getresponse()
-        except BadStatusLine, e:
+        except BadStatusLine as e:
             ### hmm. if getresponse() ever closes the socket on a bad request,
             ### then we are going to have problems with self.sock
 
@@ -1329,13 +1329,13 @@ def test():
     h.putrequest('GET', selector)
     h.endheaders()
     status, reason, headers = h.getreply()
-    print 'status =', status
-    print 'reason =', reason
-    print "read", len(h.getfile().read())
-    print
+    print('status =', status)
+    print('reason =', reason)
+    print("read", len(h.getfile().read()))
+    print()
     if headers:
-        for header in headers.headers: print header.strip()
-    print
+        for header in headers.headers: print(header.strip())
+    print()
 
     # minimal test that code to extract host from url works
     class HTTP11(HTTP):
@@ -1352,20 +1352,20 @@ def test():
 
         for host, selector in (('sourceforge.net', '/projects/python'),
                                ):
-            print "https://%s%s" % (host, selector)
+            print("https://%s%s" % (host, selector))
             hs = HTTPS()
             hs.set_debuglevel(dl)
             hs.connect(host)
             hs.putrequest('GET', selector)
             hs.endheaders()
             status, reason, headers = hs.getreply()
-            print 'status =', status
-            print 'reason =', reason
-            print "read", len(hs.getfile().read())
-            print
+            print('status =', status)
+            print('reason =', reason)
+            print("read", len(hs.getfile().read()))
+            print()
             if headers:
-                for header in headers.headers: print header.strip()
-            print
+                for header in headers.headers: print(header.strip())
+            print()
 
 if __name__ == '__main__':
     test()

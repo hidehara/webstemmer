@@ -73,7 +73,7 @@ class HTMLElement:
     return
   
   def __repr__(self):
-    return '<%s%s>' % (self.tag, ''.join( ' %s=%r' % (k,v) for (k,v) in self.attrs.iteritems() ))
+    return '<%s%s>' % (self.tag, ''.join( ' %s=%r' % (k,v) for (k,v) in self.attrs.items() ))
 
   def __iter__(self):
     return iter(self.children)
@@ -101,7 +101,7 @@ class HTMLElement:
   def set_style(self, stylesheet):
     if not stylesheet: return
     attrs = self.attrs
-    tags = [u'', self.tag]
+    tags = ['', self.tag]
     if 'class' in attrs:
       x = attrs['class']
       tags += [ t+'.'+x for t in tags ]
@@ -125,7 +125,7 @@ class HTMLElement:
       if isinstance(c, HTMLElement):
         for x in c.walk(cut, endtag, depth):
           yield x   # relay
-      elif isinstance(c, basestring):
+      elif isinstance(c, str):
         yield (depth, c)
       else:
         raise TypeError('Invalid object: %r in %r' % (c, self))
@@ -138,30 +138,30 @@ class HTMLElement:
     Reformat everything.
     """
     for (d,e) in self.walk(endtag=True, depth=1):
-      if isinstance(e, basestring):
+      if isinstance(e, str):
         yield e
       elif 0 < d:
         # start tag
         if e.tag == 'comment':
-          yield u'<!--'
+          yield '<!--'
         else:
-          yield u'<%s%s>' % (e.tag, attr2str(e.attrs.iteritems()))
+          yield '<%s%s>' % (e.tag, attr2str(iter(e.attrs.items())))
       else:
         # end tag
         if e.tag == 'comment':
-          yield u'-->'
+          yield '-->'
         else:
-          yield u'</%s>' % e.tag
+          yield '</%s>' % e.tag
     return
 
   def get_text(self, ignore_tags=NON_DISPLAYED_TAGS, br_tags=BREAK_LINE_TAGS):
     for (_,e) in self.walk(cut=lambda _,e: e.tag in ignore_tags):
-      if isinstance(e, basestring):
+      if isinstance(e, str):
         yield e
       else:
         tag = e.tag
         if tag in br_tags:
-          yield u'\n'
+          yield '\n'
         if tag == 'img' and ('alt' in e.attrs):
           yield e.attrs['alt']
     return
@@ -171,7 +171,7 @@ class HTMLElement:
     Generate the list of href links and its anchor text in the element.
     When normalize is set, the relative url is normalized based on the documentbase.
     """
-    from urllib import unquote
+    from urllib.parse import unquote
     for (_,e) in self.walk():
       if isinstance(e, HTMLElement) and e.tag == 'a' and e['href']:
         url = unquote(e['href'])
@@ -186,7 +186,7 @@ class HTMLElement:
     """
     if self.children == None:
       raise TypeError('this element cannot have a child: %r' % self)
-    if isinstance(e, basestring) and self.children and isinstance(self.children[-1], basestring):
+    if isinstance(e, str) and self.children and isinstance(self.children[-1], str):
       self.children[-1] += e
     else:
       self.children.append(e)
@@ -209,7 +209,7 @@ def tag(x):
   return isinstance(x, HTMLElement) and x.tag
 
 def text(x):
-  if isinstance(x, basestring):
+  if isinstance(x, str):
     return x
   elif isinstance(x, HTMLElement):
     return ''.join(x.get_text())
@@ -220,7 +220,7 @@ def text(x):
 def validate(root, e0):
   # check if every node (except the root) has a parent.
   for (_,e) in e0.walk():
-    if isinstance(e, basestring): continue
+    if isinstance(e, str): continue
     if e != root and (not e.parent or (e not in e.parent.children)):
       raise TypeError('Orphaned node: %r in %r' % (e, e.parent))
     if not e.children: continue
@@ -289,7 +289,7 @@ class HTMLRootElement(HTMLElement):
 
   # normalize_url(url)
   def normalize_url(self, url):
-    from urlparse import urljoin
+    from urllib.parse import urljoin
     """Convert a relative URL to an absolute one."""
     return urljoin(self.base_href, url)
 
@@ -328,7 +328,7 @@ class HTMLDocumentBuilder(HTMLHandler):
 
   def do_unknown(self, tag, attrs):
     tag = str(tag)
-    attrs = dict( (k.encode('ascii','ignore'),v) for (k,v) in attrs.iteritems() )
+    attrs = dict( (k.encode('ascii','ignore'),v) for (k,v) in attrs.items() )
     e = HTMLElement(self.root, tag, None, attrs)
     if tag == 'link':
       self.root.add_header(e)
@@ -346,7 +346,7 @@ class HTMLDocumentBuilder(HTMLHandler):
   def start_unknown(self, tag, attrs):
     #print "start:", tag, attrs
     tag = str(tag)
-    attrs = dict( (k.encode('ascii','ignore'),v) for (k,v) in attrs.iteritems() )
+    attrs = dict( (k.encode('ascii','ignore'),v) for (k,v) in attrs.items() )
     if tag == 'html':
       self.root.set_root_attrs(attrs)
     elif tag == 'form':
@@ -378,7 +378,7 @@ class HTMLDocumentBuilder(HTMLHandler):
       self.curstack[-1].finish()
       if tag == 'style' and self.stylesheet:
         self.stylesheet.parse(''.join(self.curstack[-1].children))
-        (style, _) = self.stylesheet.lookup(['',u'html',u'body'])
+        (style, _) = self.stylesheet.lookup(['','html','body'])
         self.root.attrs['_style'] = style
       self.curstack.pop()
     return
@@ -396,7 +396,7 @@ class HTMLDocumentBuilder(HTMLHandler):
 def parse(x, base_href=None, charset=None, stylesheet=None):
   builder = HTMLDocumentBuilder(base_href=base_href, stylesheet=stylesheet)
   parser = HTMLParser3(builder, charset=charset)
-  if isinstance(x, unicode):
+  if isinstance(x, str):
     parser.feed_unicode(x)
     e = parser.close()
   elif isinstance(x, str):
@@ -413,7 +413,7 @@ def parse(x, base_href=None, charset=None, stylesheet=None):
 if __name__ == '__main__':
   import getopt, agent
   def usage():
-    print 'usage: htmldom.py [-d] [-b base_href] [-c charset_in] [-C codec_out] [url ...]'
+    print('usage: htmldom.py [-d] [-b base_href] [-c charset_in] [-C codec_out] [url ...]')
     sys.exit(2)
   try:
     (opts, args) = getopt.getopt(sys.argv[1:], 'dc:C:b:')
