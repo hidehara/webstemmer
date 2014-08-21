@@ -48,7 +48,7 @@ try:
 except ImportError:
   from io import StringIO
 
-from bsddb import hashopen as dbmopen
+from dbm.gnu import open as dbmopen
 
 #from threading import Thread
 
@@ -65,7 +65,7 @@ class CrawlerFatalError(RuntimeError): pass
 ##  URLDB
 ##
 class URLDB:
-  
+
   def __init__(self, path, debug=0):
     self.db = dbmopen(path, 'c')
     self.debug = debug
@@ -74,8 +74,8 @@ class URLDB:
     return
 
   def visited(self, url):
-    import md5, struct
-    k = md5.md5(url).digest()
+    import hashlib, struct
+    k = hashlib.md5(url.encode('utf-8')).digest()
     v = k in self.db
     self.db[k] = struct.pack('<L', int(time.time()))
     if self.debug and not v:
