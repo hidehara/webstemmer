@@ -31,11 +31,11 @@
 import sys, re, time, socket
 from webstemmer.htmlparser3 import HTMLParser3, HTMLHandler
 from webstemmer.zipdb import ACLDB, ZipDumper, NullDumper
-from .httplib import HTTPConnection, BadStatusLine
+from http.client import HTTPConnection, BadStatusLine
 from urllib.robotparser import RobotFileParser
 from gzip import GzipFile
 from http.cookiejar import MozillaCookieJar
-from urllib import addinfourl
+from urllib.response import addinfourl
 from urllib.request import Request
 from urllib.parse import urlsplit, urljoin
 
@@ -164,7 +164,7 @@ class SimpleCrawler:
             print('Making connection: %r...' % (self.hostport,), file=stderr)
             self.conn = HTTPConnection(self.hostport)
           self.conn.request('GET', req.get_selector().replace(' ',''), '', headers)
-	  self.conn.sock.settimeout(self.timeout)
+          self.conn.sock.settimeout(self.timeout)
           resp = self.conn.getresponse()
           break
         except BadStatusLine as x:
