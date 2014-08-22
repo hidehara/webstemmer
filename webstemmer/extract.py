@@ -54,7 +54,7 @@ class LayoutSection:
 ##  LayoutPattern
 ##
 class LayoutPattern:
-  
+
   def __init__(self, name, score, title_sectno, main_sectno, pattern):
     self.name = name
     self.score = score
@@ -62,7 +62,7 @@ class LayoutPattern:
     self.main_sectno = main_sectno
     self.pattern = pattern
     return
-  
+
   def match_blocks(self, blocks0, strict=True):
     diffs = [ d for (d,m,p) in self.pattern ]
     mains = [ m for (d,m,p) in self.pattern ]
@@ -78,7 +78,7 @@ class LayoutPattern:
 ##  LayoutPatternSet
 ##
 class LayoutPatternSet:
-  
+
   def __init__(self, debug=0):
     self.pats = []
     self.debug = debug
@@ -92,7 +92,7 @@ class LayoutPatternSet:
                                      for k in list(e.attrs.keys()) if k in KEY_ATTRS ))
     self.encoder = encode_element2
     return
-  
+
   def read(self, fp):
     for line in fp:
       line = line.strip()
@@ -108,7 +108,7 @@ class LayoutPatternSet:
         main_sectno = -1
       self.pats.append(LayoutPattern(name, score, title_sectno, main_sectno, pattern))
     return
-  
+ 
   def identify_layout(self, tree, pat_threshold, strict=True):
     top = (None, None)
     blocks = get_textblocks(tree, encoder=self.encoder)
@@ -158,9 +158,9 @@ class LayoutPatternSet:
 ##  TextExtractor
 ##
 class TextExtractor:
-  
+ 
   def __init__(self, patternset, pat_threshold=0.9, diffscore_threshold=0.5, mainscore_threshold=10,
-               default_charset='iso-8859-1', codec_out='utf-8', strict=True, 
+               default_charset='iso-8859-1', codec_out='utf-8', strict=True,
                linkinfo='linkinfo', debug=0):
     self.pat_threshold = pat_threshold
     self.diffscore_threshold = diffscore_threshold
@@ -179,12 +179,12 @@ class TextExtractor:
                               self.pat_threshold, self.diffscore_threshold, self.mainscore_threshold,
                               codec_out=self.codec_out, strict=self.strict)
     return
-    
+
   def feed_page(self, name, fp):
     if name == self.linkinfo: return
     self.feed_tree(name, parse(fp, charset=self.default_charset))
     return
-    
+
 
 
 # main
@@ -220,7 +220,7 @@ def main():
   if not args:
     usage()
   patternset = LayoutPatternSet(debug=debug)
-  fp = file(args[0])
+  fp = open(args[0])
   patternset.read(fp)
   fp.close()
   if mangle_pat:
@@ -237,7 +237,7 @@ def main():
     elif fname == '-':
       consumer.feed_page('stdin', sys.stdin)
     else:
-      fp = file(fname)
+      fp = open(fname)
       consumer.feed_page(fname, fp)
       fp.close()
   return
