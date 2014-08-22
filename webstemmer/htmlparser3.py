@@ -276,7 +276,7 @@ if __name__ == '__main__':
     elif k == '-c': charset = v
   for fname in args:
     parser = HTMLParser3(HTMLHandler(), charset=charset, debug=debug)
-    fp = file(fname)
+    fp = open(fname)
     parser.feed_file(fp)
     parser.close()
     fp.close()

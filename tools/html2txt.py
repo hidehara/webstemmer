@@ -130,7 +130,7 @@ if __name__ == "__main__":
     elif url.startswith('http:') or url.startswith('ftp:'):
       fp = urllib.request.urlopen(url)
     else:
-      fp = file(url)
+      fp = open(url)
     p = HTMLParser3(HTMLTextHandler(out(charset_out)), charset=charset_in)
     p.feed_file(fp).close()
     fp.close()

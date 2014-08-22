@@ -490,18 +490,18 @@ def main():
       if fname == '-':
         fp = sys.stdin
       else:
-        fp = file(fname)
+        fp = open(fname)
       for line in fp:
         name = line.strip()
         if debug:
           print('Loading: %r' % name, file=stderr)
-        fp2 = file(name)
+        fp2 = open(name)
         data = fp2.read()
         fp2.close()
         feeder.feed_page(name, data)
       fp.close()
     else:
-      fp = file(fname)
+      fp = open(fname)
       data = fp.read()
       fp.close()
       feeder.feed_page(fname, data)

@@ -21,7 +21,7 @@ def main(args):
     k = k[:k.index('.')]
     (ndocs1,correct1) = (0,0)
     (ndocs,correct,_x,_y) = dic.get(k, (0,0,0,0))
-    fp = file(fname)
+    fp = open(fname)
     body = title = False
     for line in fp:
       line = line.strip()
